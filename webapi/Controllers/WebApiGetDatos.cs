@@ -19,7 +19,7 @@ namespace cndcAPI.Controllers
             _logger = logger;
         }
 
-        [HttpGet(Name = "WebApiGeneracion"), Authorize(Roles = "User")]
+        [HttpGet(Name = "WebApiGeneracion") ]
         public IEnumerable<GeneracionDatos> Get(  string Fecha, int intervalo)
         {
             string fecha = "4.12.2020";

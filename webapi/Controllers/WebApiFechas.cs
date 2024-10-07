@@ -17,7 +17,7 @@ namespace cndcAPI.Controllers
             _logger = logger;
         }
 
-        [HttpGet(Name = "WebApiFechas"), Authorize(Roles = "User")]
+        [HttpGet(Name = "WebApiFechas") ]
         public IEnumerable<FechasDto> Get()
         {
           

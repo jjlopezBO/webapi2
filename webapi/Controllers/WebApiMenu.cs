@@ -8,30 +8,28 @@ namespace cndcAPI.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class WebApiLineas : Controller
+    public class WebApiMenu : Controller
     {
-		 
         private readonly ILogger<WebApi> _logger;
 
-        private static string Reporte = "pkgapiv2.ds_lineas_trans";
+        private static string Reporte = "pkgapiv2.get_menu";
 
-        public WebApiLineas(ILogger<WebApi> logger)
+        public WebApiMenu(ILogger<WebApi> logger)
         {
             _logger = logger;
         }
 
-        [HttpGet(Name = "WebApiLineas")]
-        public IEnumerable<LineasDto> Get( )
+        [HttpGet(Name = "WebApiMenu") ]
+        public IEnumerable<Menu> Get()
         {
-             
 
-            
+
+
 
             DataTable table = Oracle.Oracle.Instance.Execute(Reporte);
 
 
-            return LineasDto.FromDataTable(table);
+            return Menu.FromDataTable(table);
         }
     }
 }
-
