@@ -18,7 +18,7 @@ namespace cndcAPI.Controllers
             _logger = logger;
         }
 
-          [HttpGet(Name = "WebApiToken"), Authorize(Roles = "User")]         
+          [HttpGet(Name = "WebApiToken")]         
         public IEnumerable<NovedadesDto> Get(int code)
         {
 
@@ -28,9 +28,6 @@ namespace cndcAPI.Controllers
 
 
             DataTable table = Oracle.Oracle.Instance.Execute(Reportes[code]);
-
-
-
 
 
             return NovedadesDto.FromDataTable(table);
