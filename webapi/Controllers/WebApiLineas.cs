@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
+using System.Threading.Tasks;
 using cndcAPI.Models;
-
 
 namespace cndcAPI.Controllers
 {
@@ -10,28 +10,42 @@ namespace cndcAPI.Controllers
     [Route("[controller]")]
     public class WebApiLineas : Controller
     {
-		 
-        private readonly ILogger<WebApi> _logger;
+        private readonly ILogger<WebApiLineas> _logger;
 
-        private static string Reporte = "pkgapiv2.ds_lineas_trans";
+        private static readonly string Reporte = "pkgapiv2.ds_lineas_trans";
 
-        public WebApiLineas(ILogger<WebApi> logger)
+        public WebApiLineas(ILogger<WebApiLineas> logger)
         {
             _logger = logger;
         }
 
         [HttpGet(Name = "WebApiLineas")]
-        public IEnumerable<LineasDto> Get( )
+        public async Task<IActionResult> GetAsync()
         {
-             
+            try
+            {
+                _logger.LogInformation("Solicitando el reporte de líneas de transmisión: {Reporte}", Reporte);
 
-            
+                DataTable table;
 
-            DataTable table = Oracle.Oracle.Instance.Execute(Reporte);
+                // Usar una instancia temporal de Oracle
+                using (var oracle = new Oracle.Oracle())
+                {
+                    table = await oracle.ExecuteAsync(Reporte);
+                }
 
+                _logger.LogInformation("Reporte de líneas de transmisión ejecutado con éxito.");
 
-            return LineasDto.FromDataTable(table);
+                // Convertir DataTable a DTO
+                var result = LineasDto.FromDataTable(table);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al procesar la solicitud para el reporte de líneas de transmisión.");
+                return StatusCode(500, "Ocurrió un error interno. Intente nuevamente más tarde.");
+            }
         }
     }
 }
-

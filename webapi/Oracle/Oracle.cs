@@ -1,173 +1,230 @@
-﻿using cndcAPI.Models;
-using Oracle.ManagedDataAccess.Client;
+﻿using System;
 using System.Data;
+using Oracle.ManagedDataAccess.Client;
+using Serilog;
 
 namespace cndcAPI.Oracle
 {
-    public class Oracle
+    public class Oracle : IDisposable
     {
+        private readonly string _connectionString;
+        private OracleConnection _connection;
+        private readonly Serilog.ILogger _logger;
 
-        protected  OracleConnection con;
-        protected Oracle()
+        // Constructor
+        public Oracle()
         {
-            Reconnect();
-
-        }
-        protected void Reconnect()
-        {
-            string conString = "User Id = spectrum ; password = spectrum; Data Source = 192.168.2.13:1521 /orcl.cndc.bo;Min Pool Size=5;Connection Lifetime=100000;Connection Timeout=60;Incr Pool Size=5; Decr Pool Size=2";
-            con = new OracleConnection();
-            con.ConnectionString = conString;
-            con.Open();
+            _connectionString = "User Id=spectrum;Password=spectrum;Data Source=192.168.2.13:1521/orcl.cndc.bo;Min Pool Size=5;Max Pool Size=50;Connection Lifetime=300;";
+            _logger = Log.Logger;
+            _logger.Information("Clase Oracle inicializada.");
         }
 
-        private static Oracle instance = null;
-        public static Oracle Instance
+        // Método para abrir la conexión
+        private async Task<OracleConnection> GetConnectionAsync()
         {
-            get
+            if (_connection == null || _connection.State != ConnectionState.Open)
             {
-                if (instance == null)
-                {
-                    instance = new Oracle();
-                }
-                else
-                {
-                    if (instance.con.State != System.Data.ConnectionState.Open)
-                    {
-                        instance.con.Close();
-                        instance.con.Dispose();
-                        instance.Reconnect();
-
-                    }
-
-                }
-                return instance;
+                _connection = new OracleConnection(_connectionString);
+                await _connection.OpenAsync();
+                _logger.Information("Conexión a la base de datos abierta.");
             }
+            return _connection;
         }
-
-        protected bool ValidarConection()
+        public async Task<DataTable> ExecuteAsync(string procedureName, Action<OracleParameterCollection> configureParameters)
         {
-            bool rtn = false;
-
-            if (con == null)
-            {
-                Reconnect();
-            }
-            else
-            {
-                if (con.State != ConnectionState.Open)
-                {
-                    try
-                    {
-                        con.Dispose();
-                        con = null;
-                        Reconnect();
-                        rtn = true;
-                    }
-                    catch (Exception)
-                    {
-
-
-                    }
-
-                }
-
-            }
-
-            return rtn;
-        }
-
-
-        public OracleCommand GetCommand()
-        {
-            ValidarConection();
-            return con.CreateCommand();
-        }
-        public DataTable Execute(string procedimiento)
-        {
-            ValidarConection();
             DataTable table = new DataTable();
-            using (OracleCommand cmd = con.CreateCommand())
+
+            try
             {
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = procedimiento;
+                var connection = await GetConnectionAsync();
 
-                cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
-                using (OracleDataAdapter ada = new OracleDataAdapter(cmd))
+                using (var cmd = connection.CreateCommand())
                 {
-                    try
-                    {
-                        ada.Fill(table);
-                    }
-                    catch (System.Exception exception)
-                    {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = procedureName;
 
-                        Console.WriteLine(exception.ToString());
-                    }
+                    // Configurar parámetros utilizando el delegado proporcionado
+                    configureParameters?.Invoke(cmd.Parameters);
 
+                    using (var adapter = new OracleDataAdapter(cmd))
+                    {
+                        adapter.Fill(table);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                // Manejo de excepciones, puedes agregar un logger aquí si lo deseas
+                throw new Exception($"Error al ejecutar el procedimiento {procedureName}", ex);
             }
 
             return table;
         }
 
-        public DataTable ExecuteFecha(string procedimiento, DateTime fecham)
+        public async Task<DataTable> ExecuteAsync(string procedimiento, string username)
         {
-            ValidarConection();
             DataTable table = new DataTable();
-            using (OracleCommand cmd = con.CreateCommand())
+
+            try
             {
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = procedimiento;
-                cmd.Parameters.Add("pfecha", OracleDbType.Date, fecham, ParameterDirection.Input);
+                var connection = await GetConnectionAsync();
 
-                cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
-                using (OracleDataAdapter ada = new OracleDataAdapter(cmd))
+                using (var cmd = connection.CreateCommand())
                 {
-                    try
-                    {
-                        ada.Fill(table);
-                    }
-                    catch (System.Exception exception)
-                    {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = procedimiento;
 
-                        Console.WriteLine(exception.ToString());
-                    }
+                    // Agregar parámetros
 
+                    
+                    cmd.Parameters.Add("email", OracleDbType.Varchar2, username, ParameterDirection.Input);
+                    cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
+
+                    using (var adapter = new OracleDataAdapter(cmd))
+                    {
+                        adapter.Fill(table);
+                    }
                 }
+
+                _logger.Information("Procedimiento '{Procedimiento}' ejecutado con éxito.", procedimiento);
             }
-
-            return table;
-        }
-        public DataTable ExecuteFecha(string procedimiento, DateTime fecham, int intervalom)
-        {
-            ValidarConection();
-            DataTable table = new DataTable();
-            using (OracleCommand cmd = con.CreateCommand())
+            catch (Exception ex)
             {
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = procedimiento;
-                cmd.Parameters.Add("pfecha", OracleDbType.Date, fecham, ParameterDirection.Input);
-                cmd.Parameters.Add("pintervalo", OracleDbType.Int16, intervalom, ParameterDirection.Input);
-
-                cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
-                using (OracleDataAdapter ada = new OracleDataAdapter(cmd))
-                {
-                    try
-                    {
-                        ada.Fill(table);
-                    }
-                    catch (System.Exception exception)
-                    {
-
-                        Console.WriteLine(exception.ToString());
-                    }
-
-                }
+                _logger.Error(ex, "Error al ejecutar el procedimiento '{Procedimiento}'", procedimiento);
+                throw;
             }
 
             return table;
         }
 
+
+        public async Task<DataTable> ExecuteAsync(string procedimiento, DateTime fecha, int intervalo)
+        {
+            DataTable table = new DataTable();
+
+            try
+            {
+                var connection = await GetConnectionAsync();
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = procedimiento;
+
+                    // Agregar parámetros
+                    cmd.Parameters.Add("pfecha", OracleDbType.Date, fecha, ParameterDirection.Input);
+                    cmd.Parameters.Add("pintervalo", OracleDbType.Int16, intervalo, ParameterDirection.Input);
+                    cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
+
+                    using (var adapter = new OracleDataAdapter(cmd))
+                    {
+                        adapter.Fill(table);
+                    }
+                }
+
+                _logger.Information("Procedimiento '{Procedimiento}' ejecutado con éxito.", procedimiento);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error al ejecutar el procedimiento '{Procedimiento}'", procedimiento);
+                throw;
+            }
+
+            return table;
+        }
+
+        // Método genérico para ejecutar un procedimiento almacenado
+        public async Task<DataTable> ExecuteAsync(string procedimiento, DateTime fecha)
+        {
+            DataTable table = new DataTable();
+
+            try
+            {
+                var connection = await GetConnectionAsync();
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = procedimiento;
+
+                    // Agregar parámetros
+                    cmd.Parameters.Add("pfecha", OracleDbType.Date, fecha, ParameterDirection.Input);
+                    cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
+
+                    using (var adapter = new OracleDataAdapter(cmd))
+                    {
+                        adapter.Fill(table);
+                    }
+                }
+
+                _logger.Information("Procedimiento '{Procedimiento}' ejecutado con éxito.", procedimiento);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error al ejecutar el procedimiento '{Procedimiento}'", procedimiento);
+                throw;
+            }
+
+            return table;
+        }
+
+        // Método genérico para ejecutar un procedimiento almacenado
+        public async Task<DataTable> ExecuteAsync(string procedimiento)
+        {
+            DataTable table = new DataTable();
+
+            try
+            {
+                var connection = await GetConnectionAsync();
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = procedimiento;
+
+                    // Agregar parámetros
+                    cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
+
+                    using (var adapter = new OracleDataAdapter(cmd))
+                    {
+                        adapter.Fill(table);
+                    }
+                }
+
+                _logger.Information("Procedimiento '{Procedimiento}' ejecutado con éxito.", procedimiento);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error al ejecutar el procedimiento '{Procedimiento}'", procedimiento);
+                throw;
+            }
+
+            return table;
+        }
+
+        // Implementación de IDisposable
+        public void Dispose()
+        {
+            if (_connection != null)
+            {
+                try
+                {
+                    if (_connection.State == ConnectionState.Open)
+                    {
+                        _connection.Close();
+                        _logger.Information("Conexión a la base de datos cerrada.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Error al cerrar la conexión a la base de datos.");
+                }
+                finally
+                {
+                    _connection.Dispose();
+                    _connection = null;
+                }
+            }
+        }
     }
 }

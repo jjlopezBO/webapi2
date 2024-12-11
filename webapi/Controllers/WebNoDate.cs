@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
+using System.Threading.Tasks;
 using cndcAPI.Models;
 
 namespace cndcAPI.Controllers
@@ -9,34 +10,57 @@ namespace cndcAPI.Controllers
     [Route("[controller]")]
     public class WebNoDate : Controller
     {
-        private static string[] Reportes = { "pkgapiv2.pd_novedades", "pkgapiv2.ds_capacidad_efectiva", "pkgapiv2.ds_capacidad_efectiva_resumen", "pkgapiv2.ds_lineas_trans", "pkgapiv2.exp_transmision", "pkgapiv2.exp_generacion" };
-        private readonly ILogger<WebApi> _logger;
+        private static readonly string[] Reportes =
+        {
+            "pkgapiv2.pd_novedades",
+            "pkgapiv2.ds_capacidad_efectiva",
+            "pkgapiv2.ds_capacidad_efectiva_resumen",
+            "pkgapiv2.ds_lineas_trans",
+            "pkgapiv2.exp_transmision",
+            "pkgapiv2.exp_generacion"
+        };
 
-        public WebNoDate(ILogger<WebApi> logger)
+        private readonly ILogger<WebNoDate> _logger;
+
+        public WebNoDate(ILogger<WebNoDate> logger)
         {
             _logger = logger;
         }
 
-       // [HttpGet(Name = "WebNoDate"), Authorize(Roles = "User")]
-        [HttpGet(Name = "WebNoDate") ]
-        public IEnumerable<NovedadesDto> Get(int code)
+        [HttpGet(Name = "WebNoDate")]
+        public async Task<IActionResult> GetAsync(int code)
         {
+            try
+            {
+                // Validar el índice del reporte
+                if (code < 0 || code >= Reportes.Length)
+                {
+                    _logger.LogWarning("Código de reporte inválido: {Code}", code);
+                    return BadRequest("Código de reporte inválido.");
+                }
 
-            Console.WriteLine(Reportes[code]);
+                _logger.LogInformation("Solicitando reporte: {Reporte}", Reportes[code]);
 
+                DataTable table;
 
+                // Usar una instancia temporal de Oracle
+                using (var oracle = new Oracle.Oracle())
+                {
+                    table = await oracle.ExecuteAsync(Reportes[code]);
+                }
 
+                _logger.LogInformation("Reporte '{Reporte}' ejecutado con éxito.", Reportes[code]);
 
-            DataTable table = Oracle.Oracle.Instance.Execute(Reportes[code]);
+                // Convertir DataTable a DTO
+                var result = NovedadesDto.FromDataTable(table);
 
-
-
-
-
-            return NovedadesDto.FromDataTable(table);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al procesar la solicitud para el código de reporte {Code}", code);
+                return StatusCode(500, "Ocurrió un error interno. Intente nuevamente más tarde.");
+            }
         }
-
-
     }
 }
-
