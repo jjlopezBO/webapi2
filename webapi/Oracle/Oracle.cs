@@ -97,6 +97,43 @@ namespace cndcAPI.Oracle
             return table;
         }
 
+        public async Task<DataTable> ExecuteAsync(string procedimiento, long periodo , long subperiodo)
+        {
+            DataTable table = new DataTable();
+
+            try
+            {
+                var connection = await GetConnectionAsync();
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = procedimiento;
+
+                    // Agregar parámetros
+
+
+                    cmd.Parameters.Add("periodo_pot", OracleDbType.Long, periodo, ParameterDirection.Input);
+                    cmd.Parameters.Add("subperiodo", OracleDbType.Long, subperiodo, ParameterDirection.Input);
+                    cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
+
+                    using (var adapter = new OracleDataAdapter(cmd))
+                    {
+                        adapter.Fill(table);
+                    }
+                }
+
+                _logger.Information("Procedimiento '{Procedimiento}' ejecutado con éxito.", procedimiento);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error al ejecutar el procedimiento '{Procedimiento}'", procedimiento);
+                throw;
+            }
+
+            return table;
+        }
+
 
         public async Task<DataTable> ExecuteAsync(string procedimiento, DateTime fecha, int intervalo)
         {
@@ -183,6 +220,40 @@ namespace cndcAPI.Oracle
                     cmd.CommandText = procedimiento;
 
                     // Agregar parámetros
+                    cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
+
+                    using (var adapter = new OracleDataAdapter(cmd))
+                    {
+                        adapter.Fill(table);
+                    }
+                }
+
+                _logger.Information("Procedimiento '{Procedimiento}' ejecutado con éxito.", procedimiento);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error al ejecutar el procedimiento '{Procedimiento}'", procedimiento);
+                throw;
+            }
+
+            return table;
+        }
+        public async Task<DataTable> ExecuteAsync(string procedimiento , int n)
+        {
+            DataTable table = new DataTable();
+
+            try
+            {
+                var connection = await GetConnectionAsync();
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = procedimiento;
+
+                    // Agregar parámetros
+                    // Agregar parámetros
+                    cmd.Parameters.Add("n", OracleDbType.Int64,n, ParameterDirection.Output);
                     cmd.Parameters.Add("results", OracleDbType.RefCursor, ParameterDirection.Output);
 
                     using (var adapter = new OracleDataAdapter(cmd))

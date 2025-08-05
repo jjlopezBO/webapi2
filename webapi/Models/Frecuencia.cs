@@ -8,12 +8,12 @@ namespace cndcAPI.Models
         private static string _valor = "VALOR";
         private static string _hora = "HORA";
 
-        public double Valor { get; set; }
+        public decimal Valor { get; set; }
         public string Hora { get; set; }
 
         public Frecuencia(DataRow row)
         {
-            Valor = (double) (System.Single)row[Frecuencia._valor];
+            Valor = (decimal) row[Frecuencia._valor];
             Hora = (string)row[Frecuencia._hora];
         }
 
