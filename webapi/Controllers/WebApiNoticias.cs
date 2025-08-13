@@ -1,8 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Data;
-using System.Threading.Tasks;
-using cndcAPI.Models;
 
 
 
