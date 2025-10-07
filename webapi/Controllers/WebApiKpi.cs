@@ -5,58 +5,49 @@ using System.Data;
 
 namespace cndcAPI.Controllers
 {
+
     [ApiController]
     [Route("[controller]")]
     public class WebApiKpi : Controller
     {
         private readonly ILogger<WebApiKpi> _logger;
-        private Dictionary<string, (string Valor, string Texto)> _kpiValores =
-       new Dictionary<string, (string, string)>
-   {
-    { "dem_max", ("1,752.02 MW", "25-SEP-2024 Hrs. 19:30") },
-    { "cap_total", ("3,573.56 MW", "May-2025") },
-    { "gen_renovable", ("1,101.96 GWh", "Mar-2025") },
-    { "gen_anual", ("1,101.96 GWh", "Mar-2025") }
-   };
-        public WebApiKpi(ILogger<WebApiKpi> logger)
+        private readonly IConfiguration _configuration;
+
+        public WebApiKpi(ILogger<WebApiKpi> logger, IConfiguration configuration)
         {
             _logger = logger;
+            _configuration = configuration;
         }
 
         [HttpGet(Name = "WebApiKpi")]
-        public async Task<IActionResult> GetAsync(string kpiCode)
+        public IActionResult Get(string kpiCode)
         {
             try
             {
                 _logger.LogInformation("Iniciando WebApiKpi...");
-                if (_kpiValores.TryGetValue(kpiCode, out var dato))
+
+                if (string.IsNullOrWhiteSpace(kpiCode))
                 {
-                    _logger.LogInformation($"KPI {kpiCode} encontrado con valor: {dato.Valor} y descripción: {dato.Texto}");
-                    return Ok(new { kpiCode, valor = dato.Valor, descripcion = dato.Texto });
+                    return BadRequest("Parámetro kpiCode es requerido.");
                 }
-                else
+
+                
+                var section = _configuration.GetSection($"Kpi:Valores:{kpiCode}");
+                var valor = section["Valor"];
+                var texto = section["Texto"];
+
+                if (string.IsNullOrEmpty(valor) || string.IsNullOrEmpty(texto))
                 {
-                    _logger.LogWarning($"KPI {kpiCode} no encontrado.");
+                    _logger.LogWarning("KPI {kpiCode} no encontrado en configuración.", kpiCode);
                     return NotFound($"KPI {kpiCode} no encontrado.");
                 }
-                //DataTable table;
 
-                //// Usar una instancia temporal de Oracle
-                //using (var oracle = new Oracle.Oracle())
-                //{
-                //    table = await oracle.ExecuteAsync("pkgaweb2.tr_noticas");
-                //}
-
-                //_logger.LogInformation("Consulta de WebApiNoticias completada con éxito.");
-
-                //// Convertir DataTable a DTO
-                //var result = Noticia.FromDataTable(table);
-
-
+                _logger.LogInformation("KPI {kpiCode} encontrado con valor: {valor} y descripción: {texto}", kpiCode, valor, texto);
+                return Ok(new { kpiCode, valor, descripcion = texto });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al WebApiKpi.");
+                _logger.LogError(ex, "Error en WebApiKpi.");
                 return StatusCode(500, "Ocurrió un error interno. Intente nuevamente más tarde.");
             }
         }

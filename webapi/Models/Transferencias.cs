@@ -25,6 +25,8 @@ namespace cndcAPI.Models
         public Coordinate Start { get; set; }
         public Coordinate End { get; set; }
         public string Inject { get; set; }
+        public string flujo_activo { get; set; }
+        public string flujo_reactivo { get; set; }
         public string Info { get; set; }
         public Animation Animation { get; set; }
 
@@ -33,7 +35,7 @@ namespace cndcAPI.Models
             // nombre_corto, info, i_x,column2 i_y, f_x,f_
 
             // y , a.v,type
-            decimal v = (decimal)row["V"];
+            decimal v = (decimal)row["Activa"];
             bool s = true;
             if (v < 0)
             {
@@ -41,8 +43,10 @@ namespace cndcAPI.Models
             }
             Id = (string) row["nombre_corto"];
             Start = new Coordinate { X = (float)row["I_X"], Y = (float)row["I_Y"] };
-            End = new Coordinate { X = (float)row["F_X"], Y = (float)row["F_X"] };
-            Inject = string.Format ("Transferencia de Potencia: {0} [MW] / Potencia Reactiva {0} [MVar] " , decimal.Abs(v) );
+            End = new Coordinate { X = (float)row["F_X"], Y = (float)row["F_Y"] };
+            Inject = string.Format ("X");
+            flujo_activo = string.Format("{0} [MW]", decimal.Abs((decimal)row["Activa"]));
+            flujo_reactivo = string.Format("{0} [MVar]", decimal.Abs((decimal)row["reactiva"]));
             Info = (string)row["info"];
             Animation = new Animation
             {

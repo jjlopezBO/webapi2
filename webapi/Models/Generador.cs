@@ -47,10 +47,10 @@ namespace cndcAPI.Models
                     Class = row["class"]?.ToString(),
                     DataInfo = row["nombre_corto"]?.ToString(),
 
-                    PotenciaActiva = $"{Convert.ToDouble(row["valor_p"]):F2} MW",
-                    PotenciaReactiva = $"{Convert.ToDouble(row["valor_q"]):F2} MVAR",
+                    PotenciaActiva = $"{Convert.ToDouble(row["valor_p"]):F2} [MW]",
+                    PotenciaReactiva = $"{Convert.ToDouble(row["valor_q"]):F2} [MVar]",
 
-                    CapacidadInstalada = $"0 MW"
+                    CapacidadInstalada = $"{Convert.ToDouble(row["capacidad"]):F2} [MW]",
                 };
 
                 lista.Add(item);

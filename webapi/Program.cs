@@ -22,6 +22,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 
 // ✅ Agregar política CORS
+/*
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("PermitirFrontend", policy =>
@@ -31,7 +32,7 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
-});
+});*/
 
 var app = builder.Build();
 
@@ -41,8 +42,8 @@ app.UseSwaggerUI();
 app.UseRouting();
 
 // ✅ Usar política CORS antes de autorización
-app.UseCors("PermitirFrontend");
-
+//app.UseCors("PermitirFrontend");
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 app.UseAuthorization();
 
 app.MapControllers();
