@@ -12,13 +12,17 @@ namespace cndcAPI.Models.GA
         private static readonly string _potEfectiva = "POTEFECTIVA";
         private static readonly string _perdidas = "PERDIDAS";
         private static readonly string _indo = "INDO";
-
+        private static readonly string _potEfectivaBorne = "POTEFECTIVABORNE";
+        
         public long PK_COD_PERIODO { get; set; }
         public long PK_PERIODO_POT { get; set; }
         public string NOMBRE { get; set; }
         public decimal POTEFECTIVA { get; set; }
         public decimal PERDIDAS { get; set; }
         public decimal INDO { get; set; }
+        public decimal POTEFECTIVABORNE { get; set; }
+
+        
 
         public Ga_PotEfec_Termo(DataRow row)
         {
@@ -28,6 +32,7 @@ namespace cndcAPI.Models.GA
             POTEFECTIVA = Convert.ToDecimal(row[_potEfectiva]);
             PERDIDAS = Convert.ToDecimal(row[_perdidas]);
             INDO = Convert.ToDecimal(row[_indo]);
+            POTEFECTIVABORNE = Convert.ToDecimal(row[_potEfectivaBorne]);
         }
 
         public static List<Ga_PotEfec_Termo> FromDataTable(DataTable table)
