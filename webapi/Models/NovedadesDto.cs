@@ -1,84 +1,51 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 
 namespace cndcAPI.Models
 {
-	public class NovedadesDto
-	{
-        private static string _titulo= "t";
-        private static string _fecha = "f";
-        private static string _descripcion = "d";
-        private static string _descripcion2 = "d2";
+    public class NovedadesDto
+    {
+        // Aliases de columnas
+        private static readonly string _titulo = "t";
+        private static readonly string _fecha = "f";
+        private static readonly string _descripcion = "d";
+        private static readonly string _descripcion2 = "d2";
 
-
-        public string Titulo { get; set; }
-        public string Descripcion  { get; set; }
-        public Decimal Valor { get; set; }
-        public DateTime Fecha { get; set; }
-
-
-		 
+        public string Titulo { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public decimal Valor { get; set; } = -1;
+        public DateTime Fecha { get; set; } = DateTime.Now.Date;
 
         public NovedadesDto(DataRow row)
         {
-            Titulo = (string)row[NovedadesDto._titulo];
-             
-            
-            if (row[NovedadesDto._descripcion] != System.DBNull.Value)
-            {
-                Descripcion = (string)row[NovedadesDto._descripcion];
+            // Titulo
+            if (row.Table.Columns.Contains(_titulo) && row[_titulo] != DBNull.Value)
+                Titulo = Convert.ToString(row[_titulo]) ?? string.Empty;
 
+            // Descripcion
+            if (row.Table.Columns.Contains(_descripcion) && row[_descripcion] != DBNull.Value)
+                Descripcion = Convert.ToString(row[_descripcion]) ?? string.Empty;
 
-            }
-            else
-            {
-                Descripcion = string.Empty;
+            // Fecha
+            if (row.Table.Columns.Contains(_fecha) && row[_fecha] != DBNull.Value)
+                Fecha = (DateTime)row[_fecha];
 
+            // Valor (desde d2)
+            if (row.Table.Columns.Contains(_descripcion2) && row[_descripcion2] != DBNull.Value)
+                Valor = Convert.ToDecimal(row[_descripcion2]);
+        }
 
-            }
-
-
-            if (row[NovedadesDto._fecha] != System.DBNull.Value)
-            {
-                Fecha = (DateTime)row[NovedadesDto._fecha];
-            }
-            else
-            {
-                Fecha = DateTime.Now.Date;
-            }
-
-
-            if (row[NovedadesDto._descripcion2] != System.DBNull.Value)
-            {
-                Valor =   Convert.ToDecimal( row[NovedadesDto._descripcion2]);
-            }
-            else
-            {
-                Valor = -1;
-            }
-
-            if (row[NovedadesDto._descripcion] != System.DBNull.Value)
-            {
-                Descripcion = (string)row[NovedadesDto._descripcion];
-            }
-            else
-            {
-                Descripcion = string.Empty;
-            }
-
-
-
+        public override string ToString()
+        {
+            return string.Format("{0}-{1}-{2}-{3}",Titulo, Descripcion, Valor, Fecha);
         }
         public static List<NovedadesDto> FromDataTable(DataTable table)
         {
-            List<NovedadesDto> lista = new List<NovedadesDto>();
+            var lista = new List<NovedadesDto>();
             foreach (DataRow row in table.Rows)
-            {
                 lista.Add(new NovedadesDto(row));
-            }
             return lista;
         }
-
     }
 }
-

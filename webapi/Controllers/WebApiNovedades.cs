@@ -47,7 +47,31 @@ namespace cndcAPI.Controllers
         }
 
 
+        [HttpGet("html", Name = "WebApiNovedadesHtml")]
+        public async Task<IActionResult> GetHtmlAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Iniciando WebApiNovedades (HTML)...");
+                DataTable table;
 
+                using (var oracle = new Oracle.Oracle())
+                {
+                    table = await oracle.ExecuteAsync("pkgapiv2.pd_novedades");
+                }
+
+                var result = NovedadesDto.FromDataTable(table);
+                var html = NovedadesHtmlBuilder.Build(result);
+
+                _logger.LogInformation("Consulta de WebApiNovedades (HTML) completada.");
+                return Content(html, "text/html; charset=utf-8");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en WebApiNovedades (HTML).");
+                return StatusCode(500, "Ocurrió un error interno. Intente nuevamente más tarde.");
+            }
+        }
 
 
     }
